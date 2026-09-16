@@ -1,0 +1,8 @@
+model_name: "Qwen/Qwen2.5-3B-Instruct"
+max_new_tokens: 256
+temperature: 0.1
+top_p: 0.9
+max_input_tokens: 512
+repetition_penalty: 1.1
+quantization: "4bit"
+use_cache: true

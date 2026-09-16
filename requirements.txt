@@ -1,0 +1,15 @@
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.8.0
+pyyaml>=6.0.1
+numpy>=1.26.0
+pandas>=2.2.0
+pytest>=8.0.0
+transformers>=4.42.0
+datasets>=2.20.0
+peft>=0.11.0
+trl>=0.9.0
+torch>=2.3.0
+accelerate>=0.33.0
+bitsandbytes>=0.43.0
+sqlglot>=23.0.0

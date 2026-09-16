@@ -1,0 +1,23 @@
+model_name: "Qwen/Qwen2.5-3B-Instruct"
+output_dir: "./artifacts/checkpoints"
+max_seq_length: 1024
+learning_rate: 2e-4
+batch_size: 2
+gradient_accumulation_steps: 8
+epochs: 1
+warmup_ratio: 0.05
+weight_decay: 0.01
+precision: "bf16"
+use_4bit: true
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+logging_steps: 10
+save_steps: 200
+eval_steps: 100
+seed: 42

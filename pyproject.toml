@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sql-slm-finetuning"
+version = "0.1.0"
+description = "Domain-specific SQL / data engineering SLM fine-tuning project"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Sunil Javadi" }]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.setuptools]
+packages = ["src"]

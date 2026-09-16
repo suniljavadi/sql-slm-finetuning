@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+.coverage
+*.log
+.DS_Store
+checkpoints/
+artifacts/
+models/
+*.bin
+*.safetensors
