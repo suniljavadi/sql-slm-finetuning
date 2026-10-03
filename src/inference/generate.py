@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 SAFE_SQL_PATTERN = re.compile(r"\b(SELECT|WITH|SHOW|DESCRIBE|EXPLAIN)\b", re.IGNORECASE)
 CONTINUATION_MARKER = re.compile(r"(?:Human:\s*)?###\s*Instruction:", re.IGNORECASE)
+SQL_FENCE = re.compile(r"```(?:sql)?\s*(.*?)```", re.IGNORECASE | re.DOTALL)
 
 
 def validate_user_input(text: str) -> str:
@@ -33,7 +34,9 @@ def validate_sql_output(sql_text: str) -> str:
 
 def trim_model_continuation(sql_text: str) -> str:
     match = CONTINUATION_MARKER.search(sql_text)
-    return sql_text[:match.start()].strip() if match else sql_text.strip()
+    candidate = sql_text[:match.start()] if match else sql_text
+    fenced_sql = SQL_FENCE.search(candidate)
+    return fenced_sql.group(1).strip() if fenced_sql else candidate.strip()
 
 
 def generate_sql(

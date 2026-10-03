@@ -27,6 +27,14 @@ def test_generate_sql_trims_next_training_example_from_model_output():
     assert sql == "SELECT name FROM customers;"
 
 
+def test_generate_sql_removes_markdown_fence_from_model_output():
+    generated = "```sql\nSELECT name FROM customers;\n```"
+
+    sql = generate_sql("List customer names", generator=lambda _prompt, _schema: generated)
+
+    assert sql == "SELECT name FROM customers;"
+
+
 def test_generate_sql_rejects_empty_input():
     try:
         generate_sql("   ")

@@ -32,7 +32,7 @@ app = FastAPI(title="SQL SLM API", version="0.1.0", lifespan=lifespan)
 
 class GenerateRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=4000)
-    schema: str = Field(default="", max_length=4000)
+    database_schema: str = Field(default="", alias="schema", max_length=4000)
     model_response: str | None = None
 
 
@@ -53,7 +53,7 @@ def generate(request: GenerateRequest, http_request: Request) -> GenerateRespons
             request.prompt,
             request.model_response,
             getattr(http_request.app.state, "sql_generator", None),
-            request.schema,
+            request.database_schema,
         )
         return GenerateResponse(sql=sql)
     except (TypeError, ValueError) as exc:
