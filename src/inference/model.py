@@ -66,11 +66,11 @@ def make_sql_generator(
 ):
     model, tokenizer = load_adapter_model(model_name, adapter_dir, use_4bit)
 
-    def generate(prompt: str) -> str:
+    def generate(prompt: str, schema: str = "") -> str:
         record = {
             "instruction": "Generate a read-only SQL query. Return only the SQL query.",
             "input": prompt,
-            "schema": "",
+            "schema": schema,
         }
         return generate_completion(model, tokenizer, record, max_new_tokens)
 

@@ -9,20 +9,20 @@ def test_generate_sql_valid_select():
 def test_generate_sql_uses_injected_generator_and_validates_result():
     prompts = []
 
-    def generator(prompt):
-        prompts.append(prompt)
+    def generator(prompt, schema):
+        prompts.append((prompt, schema))
         return "SELECT name FROM customers;"
 
-    sql = generate_sql("  list customer names  ", generator=generator)
+    sql = generate_sql("  list customer names  ", generator=generator, schema=" customers(id, name) ")
 
-    assert prompts == ["list customer names"]
+    assert prompts == [("list customer names", "customers(id, name)")]
     assert sql == "SELECT name FROM customers;"
 
 
 def test_generate_sql_trims_next_training_example_from_model_output():
     generated = "SELECT name FROM customers;Human: ### Instruction:\nnext example"
 
-    sql = generate_sql("List customer names", generator=lambda _: generated)
+    sql = generate_sql("List customer names", generator=lambda _prompt, _schema: generated)
 
     assert sql == "SELECT name FROM customers;"
 

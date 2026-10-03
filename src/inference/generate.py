@@ -39,12 +39,18 @@ def trim_model_continuation(sql_text: str) -> str:
 def generate_sql(
     prompt: str,
     model_response: str | None = None,
-    generator: Callable[[str], str] | None = None,
+    generator: Callable[[str, str], str] | None = None,
+    schema: str = "",
 ) -> str:
     user_input = validate_user_input(prompt)
+    if not isinstance(schema, str):
+        raise TypeError("Schema must be a string.")
+    cleaned_schema = schema.strip()
+    if len(cleaned_schema) > 4000:
+        raise ValueError("Schema is too long.")
     if model_response is None:
         if generator is None:
             model_response = f"SELECT * FROM example_table WHERE description LIKE '%{user_input}%';"
         else:
-            model_response = trim_model_continuation(generator(user_input))
+            model_response = trim_model_continuation(generator(user_input, cleaned_schema))
     return validate_sql_output(model_response)

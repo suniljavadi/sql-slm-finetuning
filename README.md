@@ -179,6 +179,15 @@ Endpoints:
 - GET /health
 - POST /generate
 
+`POST /generate` accepts a natural-language `prompt` and an optional database `schema`. For adapter-backed inference, both values are passed through the same instruction format used during training; the returned SQL is validated before it is sent back.
+
+```json
+{
+  "prompt": "List customer names in Boston",
+  "schema": "customers(id, name, city)"
+}
+```
+
 ## Safety
 
 The project includes safety validation for:

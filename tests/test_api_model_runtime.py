@@ -22,7 +22,7 @@ def test_model_generator_formats_prompt_and_uses_loaded_adapter(monkeypatch):
     monkeypatch.setattr(model_runtime, "generate_completion", fake_generate_completion)
 
     generator = model_runtime.make_sql_generator("base-model", "adapter", True, 64)
-    result = generator("List customer names")
+    result = generator("List customer names", "customers(id, name)")
 
     assert loaded == [("base-model", "adapter", True)]
     assert result == "SELECT name FROM customers;"
@@ -33,7 +33,7 @@ def test_model_generator_formats_prompt_and_uses_loaded_adapter(monkeypatch):
             {
                 "instruction": "Generate a read-only SQL query. Return only the SQL query.",
                 "input": "List customer names",
-                "schema": "",
+                "schema": "customers(id, name)",
             },
             64,
         )
@@ -42,11 +42,16 @@ def test_model_generator_formats_prompt_and_uses_loaded_adapter(monkeypatch):
 
 def test_api_loads_configured_generator_once_at_startup(monkeypatch):
     loaded = []
-    prompts = []
+    requests = []
 
     def fake_make_sql_generator(**kwargs):
         loaded.append(kwargs)
-        return lambda prompt: prompts.append(prompt) or "SELECT name FROM customers;"
+
+        def generate(prompt, schema):
+            requests.append((prompt, schema))
+            return "SELECT name FROM customers;"
+
+        return generate
 
     monkeypatch.setattr(api_main, "make_sql_generator", fake_make_sql_generator)
     monkeypatch.setenv("SQL_MODEL_ADAPTER_DIR", "artifacts/test-adapter")
@@ -55,11 +60,17 @@ def test_api_loads_configured_generator_once_at_startup(monkeypatch):
     monkeypatch.setenv("SQL_MODEL_MAX_NEW_TOKENS", "64")
 
     with TestClient(api_main.app) as client:
-        response = client.post("/generate", json={"prompt": "List customer names"})
+        response = client.post(
+            "/generate",
+            json={
+                "prompt": "List customer names",
+                "schema": "customers(id, name)",
+            },
+        )
 
     assert response.status_code == 200
     assert response.json()["sql"] == "SELECT name FROM customers;"
-    assert prompts == ["List customer names"]
+    assert requests == [("List customer names", "customers(id, name)")]
     assert loaded == [
         {
             "model_name": "test-base",
