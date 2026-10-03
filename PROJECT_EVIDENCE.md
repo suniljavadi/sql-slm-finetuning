@@ -113,6 +113,10 @@ Status: COMPLETED as a small external execution check.
 
 The adapter improved syntax validity but did not improve execution accuracy on this small independent subset. Its SQL is not yet reliably correct. Report retained locally at ignored `artifacts/bird-mini-dev-20250722/bird-execution.json`.
 
+### Schema-Guard Diagnostic
+
+Offline validation of the saved adapter predictions rejected 12 of 26 execution failures and accepted all four execution-correct outputs in the 30-row sample. A six-row guarded-retry check achieved 2/6 execution accuracy, matching the unguarded adapter on the same rows. The guard catches some invalid identifiers, but the retry did not improve execution accuracy in this small sample.
+
 ## Held-Out Evaluation
 
 The base model and fine-tuned adapter were both generated against the same five test records.

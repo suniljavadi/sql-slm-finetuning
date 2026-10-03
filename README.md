@@ -141,6 +141,7 @@ The project intentionally distinguishes measured evidence from proposals.
 - 100-row SQL-Create-Context-derived split: base 0/100 vs adapter 61/100 normalized exact match; parse validity 27/100 vs 100/100; safety pass 100/100 for both
 - Transfer check on the original 5-row synthetic split after the larger fine-tune: adapter exact match remained 0/5; syntax/safety passed on 4/4 SQL targets
 - Independent BIRD Mini-Dev SQLite subset (30 rows across 3 databases): execution accuracy 4/30 for both base and adapter; parse validity 16/30 vs 25/30; exact match 1/30 vs 0/30
+- Schema guard offline audit rejected 12/26 adapter execution failures while accepting all four execution-correct outputs; a six-row retry check did not change execution accuracy (2/6)
 - Reliable semantic/database accuracy: NOT DEMONSTRATED
 - Test coverage for software behavior: VERIFIED
 - Dataset validation: VERIFIED
@@ -240,6 +241,7 @@ The API supports adapter-backed local inference when configured as above. A publ
 - A separate one-epoch run on 800 filtered SQL-Create-Context examples improved held-out exact match on its 100-row random split; this is not an independent benchmark and may benefit from source/schema overlap.
 - The adapter did not transfer exact-match performance to the original five synthetic test rows (0/5); the same-source benchmark gain should not be generalized.
 - Execution-based evaluation covered only 30 BIRD Mini-Dev examples; both models were correct on 4/30, so reliable execution accuracy is not demonstrated.
+- Schema-grounding validation catches some nonexistent identifiers, but a six-row retry experiment did not improve execution accuracy.
 - The public dataset is derived from WikiSQL and Spider, not enterprise production data.
 - The project is intentionally conservative about model performance claims.
 - Real cloud deployment would require GPU inference and operational monitoring.
