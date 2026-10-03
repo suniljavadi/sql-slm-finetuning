@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 
+from src.inference.schema_validation import validate_sql_schema
+
 SAFE_SQL_PATTERN = re.compile(r"\b(SELECT|WITH|SHOW|DESCRIBE|EXPLAIN)\b", re.IGNORECASE)
 CONTINUATION_MARKER = re.compile(r"(?:Human:\s*)?###\s*Instruction:", re.IGNORECASE)
 SQL_FENCE = re.compile(r"```(?:sql)?\s*(.*?)```", re.IGNORECASE | re.DOTALL)
@@ -56,4 +58,15 @@ def generate_sql(
             model_response = f"SELECT * FROM example_table WHERE description LIKE '%{user_input}%';"
         else:
             model_response = trim_model_continuation(generator(user_input, cleaned_schema))
-    return validate_sql_output(model_response)
+            try:
+                candidate = validate_sql_output(model_response)
+                return validate_sql_schema(candidate, cleaned_schema)
+            except ValueError as exc:
+                correction_prompt = (
+                    f"{user_input}\nThe previous SQL failed validation: {exc} "
+                    "Correct it using only tables and columns in the supplied schema. "
+                    f"Previous SQL: {model_response}\nReturn only the corrected SQL."
+                )
+                model_response = trim_model_continuation(generator(correction_prompt, cleaned_schema))
+    cleaned_sql = validate_sql_output(model_response)
+    return validate_sql_schema(cleaned_sql, cleaned_schema)
