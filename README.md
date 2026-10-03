@@ -240,7 +240,7 @@ The API supports adapter-backed local inference when configured as above. A publ
 
 ## Future Improvements
 
-- add larger SQL benchmark datasets
+- run the documented schema-conditioned SQL-Create-Context experiment and report paired baseline/adapter results
 - add execution-based evaluation against SQLite or Postgres
 - add a stronger evaluation harness
 - expand and validate a representative SQL training/evaluation corpus

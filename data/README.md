@@ -42,3 +42,17 @@ Example:
 This folder contains reproducible example data for software validation. It is not production enterprise data.
 
 The checked-in JSONL splits currently contain 19 training, 4 validation, and 5 test examples (28 total). The small size is suitable for validating the data and training pipeline only, not for measuring production model quality.
+
+## Optional Schema-Conditioned Fine-Tuning Data
+
+`src/data/prepare_sql_create_context.py` downloads a seeded sample from [SQL-Create-Context](https://huggingface.co/datasets/b-mc2/sql-create-context), filters invalid, duplicate, and non-query SQL examples, then writes deterministic train/validation/test splits under ignored `artifacts/`. The source dataset is labeled CC-BY-4.0 and was built from [WikiSQL](https://huggingface.co/datasets/wikisql) and [Spider](https://huggingface.co/datasets/spider); retain attribution to b-mc2 and cite the upstream datasets when using derived data. The dataset itself is not checked into this repository.
+
+Prepare 1,000 examples and train one QLoRA epoch with:
+
+```bash
+python -m src.data.prepare_sql_create_context --max-examples 1000
+python -m src.training.train --config configs/training.sql-create-context.yaml
+python -m src.evaluation.model_evaluation --test-file artifacts/sql-create-context-1000/test.jsonl --adapter-dir artifacts/sql-create-context-qlora/checkpoints
+```
+
+This larger run is an experiment, not a quality claim. Compare exact match, SQL syntax/safety, and execution-based results before describing it as an improvement.

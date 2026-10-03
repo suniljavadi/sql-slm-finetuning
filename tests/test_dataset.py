@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from src.data.prepare_sql_create_context import prepare_splits
 from src.data.validate_dataset import validate_dataset_file
 
 
@@ -54,3 +55,32 @@ def test_duplicate_rows_rejected(tmp_path: Path):
         raise AssertionError("Expected duplicate validation to fail")
     except ValueError:
         pass
+
+
+def test_prepare_splits_filters_mutations_deduplicates_and_is_deterministic():
+    source_rows = [
+        {
+            "question": f"Show customer {index}",
+            "context": "CREATE TABLE customers (id INT, name TEXT)",
+            "answer": f"SELECT name FROM customers WHERE id = {index}",
+        }
+        for index in range(10)
+    ]
+    source_rows.extend(
+        [
+            {
+                "question": "Remove all customers",
+                "context": "CREATE TABLE customers (id INT)",
+                "answer": "DELETE FROM customers",
+            },
+            source_rows[0],
+        ]
+    )
+
+    first = prepare_splits(source_rows, max_examples=10, seed=19)
+    second = prepare_splits(source_rows, max_examples=10, seed=19)
+
+    assert first == second
+    assert sum(map(len, first.values())) == 10
+    assert all("DELETE" not in row["output"].upper() for rows in first.values() for row in rows)
+    assert all(first[name] for name in ("train", "validation", "test"))

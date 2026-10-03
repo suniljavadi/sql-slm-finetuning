@@ -1,0 +1,26 @@
+model_name: "Qwen/Qwen2.5-3B-Instruct"
+train_file: "./artifacts/sql-create-context-1000/train.jsonl"
+validation_file: "./artifacts/sql-create-context-1000/val.jsonl"
+output_dir: "./artifacts/sql-create-context-qlora/checkpoints"
+max_seq_length: 1024
+learning_rate: 0.0002
+batch_size: 2
+gradient_accumulation_steps: 8
+epochs: 1
+warmup_ratio: 0.05
+weight_decay: 0.01
+precision: "bf16"
+use_4bit: true
+gradient_checkpointing: true
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+logging_steps: 10
+eval_strategy: "epoch"
+save_strategy: "epoch"
+seed: 42
