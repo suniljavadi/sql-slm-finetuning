@@ -4,8 +4,9 @@
 
 - Model: Qwen2.5-3B-Instruct
 - Method: QLoRA NF4 with LoRA rank 16
-- Data: synthetic SQL/data-engineering examples only; no proprietary data
-- Purpose: verify the end-to-end fine-tuning pipeline, not claim production model quality
+- Data: 28 synthetic baseline examples plus a filtered 1,000-row sample from SQL-Create-Context; no proprietary data
+- Public dataset provenance: SQL-Create-Context is labeled CC-BY-4.0 and derived from WikiSQL and Spider; attribution is documented in `data/README.md`
+- Purpose: verify the pipeline and run a preliminary quality experiment, not claim production readiness
 
 ## Dataset
 
@@ -15,7 +16,9 @@
 - Test: 5
 - Split: 70% / 15% / 15%, verified by dataset tests
 
-The dataset is intentionally tiny. It is useful for a smoke run and code-path validation, not a representative SQL benchmark.
+The checked-in synthetic dataset is intentionally tiny and used only for the initial smoke run.
+
+The separate schema-conditioned dataset experiment sampled 1,000 valid, unique read-only queries from SQL-Create-Context using seed 42. It was shuffled and split 800/100/100 before fine-tuning; exact duplicates were removed across the whole sample. The source dataset combines WikiSQL and Spider-derived examples. The held-out split is random within this derived dataset and is not an independent benchmark.
 
 ## AMD Runtime
 
@@ -47,6 +50,38 @@ Status: COMPLETED as a short pipeline smoke run.
 
 This run proves the ROCm QLoRA pipeline executed; it is not a meaningful convergence or model-quality claim.
 
+## Schema-Conditioned Dataset Experiment
+
+Status: COMPLETED as a preliminary quality experiment.
+
+- Source: `b-mc2/sql-create-context`, labeled CC-BY-4.0
+- Filtered sample: 1,000 rows; train 800, validation 100, test 100
+- Filtering: requires question/schema/answer, SQLGlot-parsable single read-only query, bounded field lengths, and unique question/schema/answer
+- Split seed: 42
+- Backend: ROCm on the same MI300X VF
+- Epochs: 1; optimizer steps: 50
+- Batch size: 2; gradient accumulation: 8
+- Train loss: 0.3254
+- Validation loss: 0.0874
+- Runtime: 123.1 seconds
+- Adapter saved on Droplet at `/shared-docker/sql-slm-finetuning-api-demo/artifacts/sql-create-context-qlora/checkpoints`
+- Adapter copied locally to ignored `artifacts/sql-create-context-qlora/checkpoints/`
+- Evaluation report saved on Droplet and copied locally to ignored `artifacts/sql-create-context-qlora/evaluation.json`
+
+These loss values document the run; held-out generation metrics below are the more relevant quality check.
+
+### Paired 100-Row Evaluation
+
+The base and adapter were evaluated on the same 100-row random held-out split. Scoring trims model continuation at the next training prompt and scores a fenced SQL block when present.
+
+| Measure | Base | Adapter |
+| --- | ---: | ---: |
+| Normalized exact match | 0/100 | 61/100 |
+| SQL parse-valid | 27/100 | 100/100 |
+| Project SQL safety pass | 100/100 | 100/100 |
+
+This is a promising within-dataset result, not an independent benchmark. Random row splitting may leave related schemas or query patterns across splits. Exact match does not establish semantic correctness, and no queries were executed against databases. The safety metric checks the project’s read-only validator; it is not a database authorization boundary.
+
 ## Held-Out Evaluation
 
 The base model and fine-tuned adapter were both generated against the same five test records.
@@ -62,11 +97,12 @@ The adapter showed no exact-match gain in this smoke experiment. The test set is
 ## Software Verification
 
 - Dataset validation and split tests: passed
+- Public dataset filtering, deduplication, deterministic split, and minimum non-empty split tests: passed
 - Training-data prompt masking and padding tests: passed
 - ROCm backend precedence and device-count tests: passed
-- Dry-run: passed; validated 19 train and 4 validation examples without downloading a model or writing artifacts
+- Dry-run: passed for both the baseline (19 train / 4 validation) and public-data (800 train / 100 validation) configs without downloading weights or writing model artifacts
 - CPU + 4-bit guard: passed; refuses to claim GPU training on CPU
-- Base-vs-adapter evaluation metrics: tested with mocked predictions
+- Base-vs-adapter evaluation metrics: tested with mocked predictions and exercised on 100 AMD-held-out examples
 
 ## Failure and Fix
 
@@ -74,13 +110,14 @@ The first AMD attempt loaded the base model and LoRA weights but stopped before 
 
 ## Not Verified
 
-- Useful fine-tuned quality or improvement over the base model
+- Generalization beyond the SQL-Create-Context-derived random split
 - Semantic correctness or SQL execution accuracy
-- Multi-epoch training or a larger, representative dataset
+- Multi-epoch training or a larger, independently sourced evaluation benchmark
 - Production deployment, serving performance, or cost optimization
 
 ## Final Claim Status
 
-- Verified: working AMD MI300X ROCm QLoRA smoke run and saved adapter
+- Verified: AMD MI300X ROCm smoke run and separate 800-example QLoRA experiment with saved adapters
+- Preliminary evidence: adapter improved normalized exact match from 0/100 to 61/100 on a random SQL-Create-Context-derived held-out split
 - Verified: local dry-run, training-data handling, backend detection, and evaluation code tests
-- Not demonstrated: meaningful model improvement or production readiness
+- Not demonstrated: independent benchmark generalization, execution-based accuracy, or production readiness

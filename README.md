@@ -117,6 +117,8 @@ python3 -m src.evaluation.model_evaluation --test-file data/test.jsonl --adapter
 
 The completed run reported train loss `1.4969` and validation loss `1.7522`. On the 5-row held-out split, base and adapter exact match were both `0/5`; on the four SQL targets, both produced a syntactically valid and safety-filter-passing first code block (`4/4`). The adapter did not improve exact match. Full predictions include trailing prompt-like continuation, so these preliminary metrics must not be presented as production quality. See [PROJECT_EVIDENCE.md](PROJECT_EVIDENCE.md).
 
+A separate schema-conditioned experiment used 1,000 filtered rows from the CC-BY-4.0 SQL-Create-Context dataset (800 train / 100 validation / 100 test). After one epoch and 50 optimizer steps, train loss was `0.3254` and validation loss was `0.0874`. On the 100-row held-out split, the adapter scored `61/100` normalized exact match, `100/100` parse-valid SQL, and `100/100` safety-pass; the base scored `0/100`, `27/100`, and `100/100`, respectively. This is a promising result on a random split from the same derived dataset, not an independent benchmark or execution-accuracy claim. See [PROJECT_EVIDENCE.md](PROJECT_EVIDENCE.md) for provenance and limitations.
+
 ## Evaluation
 
 Evaluation is intentionally multi-layered:
@@ -135,8 +137,9 @@ The evaluation logic is implemented in [src/evaluation/evaluate.py](src/evaluati
 
 The project intentionally distinguishes measured evidence from proposals.
 
-- Base vs adapter exact match: 0/5 each on the tiny held-out split
-- SQL parse/safety pass: 4/4 each for the first fenced SQL block; semantic/execution correctness not measured
+- Initial 5-row synthetic smoke split: base and adapter exact match were both 0/5; parse/safety checks passed on 4/4 SQL targets
+- 100-row SQL-Create-Context-derived split: base 0/100 vs adapter 61/100 normalized exact match; parse validity 27/100 vs 100/100; safety pass 100/100 for both
+- Semantic correctness and database execution accuracy: NOT MEASURED
 - Test coverage for software behavior: VERIFIED
 - Dataset validation: VERIFIED
 - API validation: VERIFIED
@@ -231,16 +234,16 @@ The API supports adapter-backed local inference when configured as above. A publ
 
 ## Limitations
 
-- The AMD MI300X run was only one epoch/two optimizer steps on 19 synthetic training rows; it is a smoke run, not a meaningful quality result.
-- Base and adapter exact match were both 0/5; the adapter did not show an accuracy gain.
+- The initial AMD MI300X smoke run used one epoch/two optimizer steps on 19 synthetic training rows; it validates the pipeline, not model quality.
+- A separate one-epoch run on 800 filtered SQL-Create-Context examples improved held-out exact match on its 100-row random split; this is not an independent benchmark and may benefit from source/schema overlap.
 - No execution-based or business-semantic evaluation has been run.
-- Synthetic dataset is not enterprise production data.
+- The public dataset is derived from WikiSQL and Spider, not enterprise production data.
 - The project is intentionally conservative about model performance claims.
 - Real cloud deployment would require GPU inference and operational monitoring.
 
 ## Future Improvements
 
-- run the documented schema-conditioned SQL-Create-Context experiment and report paired baseline/adapter results
+- evaluate the adapter on an independent SQL benchmark and database-execution tests
 - add execution-based evaluation against SQLite or Postgres
 - add a stronger evaluation harness
 - expand and validate a representative SQL training/evaluation corpus
@@ -262,9 +265,10 @@ The API supports adapter-backed local inference when configured as above. A publ
 Status summary:
 
 - Dataset pipeline: VERIFIED
-- AMD MI300X QLoRA smoke run: COMPLETED; quality improvement NOT demonstrated
+- Initial AMD MI300X QLoRA smoke run: COMPLETED
+- Schema-conditioned 800-row AMD QLoRA experiment: COMPLETED; preliminary held-out gain observed on one source-derived split
 - API and tests: VERIFIED
-- Large/representative GPU fine-tune: NOT RUN
+- Independent benchmark, execution accuracy, and representative enterprise-data evaluation: NOT RUN
 - Deployment: PROPOSED
 
 ## Evidence
