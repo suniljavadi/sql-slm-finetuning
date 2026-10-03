@@ -91,7 +91,31 @@ Key training decisions:
 - validation set for loss tracking
 - explicit safety checks around SQL output
 
-A training script is implemented under [src/training/train.py](src/training/train.py). It supports dry-run validation, configuration loading, and reproducible execution.
+A training script is implemented under [src/training/train.py](src/training/train.py). It validates the JSONL train/validation splits, tokenizes the SQL completion while masking prompt tokens from the loss, applies LoRA or 4-bit QLoRA, evaluates on the validation split, and saves the adapter and tokenizer. CPU-only tests cover formatting, masking, padding, ROCm backend detection, dry-run behavior, and the unsupported CPU/4-bit guard.
+
+### AMD / ROCm training
+
+Install a ROCm-enabled PyTorch build matched to your AMD GPU, operating system, and installed ROCm release using [AMD's current PyTorch instructions](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/3rd-party/pytorch-install.html) or the supported Windows ROCm package source for your specific release. Then activate the environment and install this project's dependencies. For QLoRA, also verify that the installed bitsandbytes wheel supports your exact ROCm/GPU combination; see the [bitsandbytes AMD installation matrix](https://huggingface.co/docs/bitsandbytes/en/installation#amd-rocm).
+
+Before training, verify the runtime reports a HIP build and an available accelerator:
+
+```powershell
+python -c "import torch; print('HIP:', torch.version.hip); print('GPU available:', torch.cuda.is_available()); print('GPU count:', torch.cuda.device_count())"
+python -m src.training.train --config configs/training.yaml --dry-run
+```
+
+The dry-run validates data/configuration but downloads no model and writes no adapter. The initial AMD Cloud smoke run used one MI300X VF with a ROCm-enabled PyTorch container, one epoch, and two optimizer steps. It completed and saved an adapter, but the dataset contains only 19 training and 4 validation examples; this verifies pipeline execution, not useful production fine-tuning.
+
+In the AMD ROCm PyTorch container, run:
+
+```bash
+cd /shared-docker/sql-slm-finetuning
+python3 -m src.training.train --config configs/training.yaml --dry-run
+python3 -m src.training.train --config configs/training.yaml
+python3 -m src.evaluation.model_evaluation --test-file data/test.jsonl --adapter-dir artifacts/checkpoints --model Qwen/Qwen2.5-3B-Instruct
+```
+
+The completed run reported train loss `1.4969` and validation loss `1.7522`. On the 5-row held-out split, base and adapter exact match were both `0/5`; on the four SQL targets, both produced a syntactically valid and safety-filter-passing first code block (`4/4`). The adapter did not improve exact match. Full predictions include trailing prompt-like continuation, so these preliminary metrics must not be presented as production quality. See [PROJECT_EVIDENCE.md](PROJECT_EVIDENCE.md).
 
 ## Evaluation
 
@@ -111,8 +135,8 @@ The evaluation logic is implemented in [src/evaluation/evaluate.py](src/evaluati
 
 The project intentionally distinguishes measured evidence from proposals.
 
-- Base model evaluation: NOT MEASURED in this current environment
-- Fine-tuned model evaluation: NOT RUN in this current environment
+- Base vs adapter exact match: 0/5 each on the tiny held-out split
+- SQL parse/safety pass: 4/4 each for the first fenced SQL block; semantic/execution correctness not measured
 - Test coverage for software behavior: VERIFIED
 - Dataset validation: VERIFIED
 - API validation: VERIFIED
@@ -182,7 +206,9 @@ The current project is set up as a local reproducible inference/API project. Dep
 
 ## Limitations
 
-- No real GPU fine-tune was executed in this workspace.
+- The AMD MI300X run was only one epoch/two optimizer steps on 19 synthetic training rows; it is a smoke run, not a meaningful quality result.
+- Base and adapter exact match were both 0/5; the adapter did not show an accuracy gain.
+- No execution-based or business-semantic evaluation has been run.
 - Synthetic dataset is not enterprise production data.
 - The project is intentionally conservative about model performance claims.
 - Real cloud deployment would require GPU inference and operational monitoring.
@@ -192,7 +218,8 @@ The current project is set up as a local reproducible inference/API project. Dep
 - add larger SQL benchmark datasets
 - add execution-based evaluation against SQLite or Postgres
 - add a stronger evaluation harness
-- integrate real LoRA fine-tuning on GPU hardware
+- expand and validate a representative SQL training/evaluation corpus
+- improve prompt/stop-sequence behavior and run multi-epoch experiments with held-out semantic and execution evaluation
 - add model registry and MLOps artifacts
 
 ## Interview Questions
@@ -210,9 +237,9 @@ The current project is set up as a local reproducible inference/API project. Dep
 Status summary:
 
 - Dataset pipeline: VERIFIED
-- Training pipeline skeleton: VERIFIED
+- AMD MI300X QLoRA smoke run: COMPLETED; quality improvement NOT demonstrated
 - API and tests: VERIFIED
-- Full GPU fine-tune: NOT RUN
+- Large/representative GPU fine-tune: NOT RUN
 - Deployment: PROPOSED
 
 ## Evidence

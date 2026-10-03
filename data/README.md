@@ -40,3 +40,5 @@ Example:
 ## Status
 
 This folder contains reproducible example data for software validation. It is not production enterprise data.
+
+The checked-in JSONL splits currently contain 19 training, 4 validation, and 5 test examples (28 total). The small size is suitable for validating the data and training pipeline only, not for measuring production model quality.

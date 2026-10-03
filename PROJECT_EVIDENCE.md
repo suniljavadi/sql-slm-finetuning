@@ -1,89 +1,86 @@
 # Project Evidence
 
-## Model Selected
+## Project Scope
 
 - Model: Qwen2.5-3B-Instruct
-- Status: SELECTED FOR DESIGN AND PIPELINE, not claimed as fully fine-tuned in this environment
-- Reason: small, quantizable, instruction-tuned, practical for QLoRA and interview defense
+- Method: QLoRA NF4 with LoRA rank 16
+- Data: synthetic SQL/data-engineering examples only; no proprietary data
+- Purpose: verify the end-to-end fine-tuning pipeline, not claim production model quality
 
-## Dataset Source
+## Dataset
 
-- Source: synthetic SQL/data-engineering examples created for the project
-- Status: synthetic only, not enterprise proprietary data
-- Purpose: controlled SQL generation and safety evaluation
+- Total examples: 28
+- Train: 19
+- Validation: 4
+- Test: 5
+- Split: 70% / 15% / 15%, verified by dataset tests
 
-## Dataset Size
+The dataset is intentionally tiny. It is useful for a smoke run and code-path validation, not a representative SQL benchmark.
 
-- Total examples: 30 synthetic examples in the current repository seed set
-- Split: 70% train, 15% validation, 15% test
-- Verified by the split script and tests
+## AMD Runtime
 
-## Train/Validation/Test Split
-
-- Train: 21 examples
-- Validation: 4 examples
-- Test: 5 examples
-
-Status: VERIFIED by split script output and dataset tests.
-
-## Training Configuration
-
-- Model: Qwen2.5-3B-Instruct
-- Method: LoRA / QLoRA intended
-- Key settings: rank, alpha, dropout, target modules configured in [src/training/config.py](src/training/config.py)
-- Status: IMPLEMENTED, not executed end-to-end in this environment
+- Provider: AMD Developer Cloud GPU Droplet
+- Accelerator: 1x AMD Instinct MI300X VF, 192 GB VRAM
+- Region: ATL1
+- Container: PyTorch marketplace image
+- Runtime observed in container: Python 3.12.3, PyTorch 2.12.0+rocm7.14.0, HIP 7.14.60850, bitsandbytes 0.50.2
+- `torch.cuda.is_available()`: true; device count: 1
+- bitsandbytes NF4 linear-layer GPU smoke test: passed
 
 ## Actual Training Run
 
-Status: NOT RUN in this environment.
+Status: COMPLETED as a short pipeline smoke run.
 
-Evidence: no GPU-backed fine-tune was executed. This repository includes a real training entry point, but the actual training run is not claimed to have completed.
+- Backend: ROCm
+- Epochs: 1
+- Optimizer steps: 2
+- Batch size: 2
+- Gradient accumulation: 8
+- Train examples: 19
+- Validation examples: 4
+- Train loss: 1.4969
+- Validation loss: 1.7522
+- Train runtime: 9.63 seconds
+- Trainable adapter parameters: 7,372,800 (0.2383% of 3,093,311,488 total parameters)
+- Adapter saved on Droplet at `/shared-docker/sql-slm-finetuning/artifacts/checkpoints`
+- Adapter and tokenizer downloaded locally to ignored `artifacts/amd-mi300x-qlora/`
 
-## Actual Evaluation Results
+This run proves the ROCm QLoRA pipeline executed; it is not a meaningful convergence or model-quality claim.
 
-- Dataset validation tests: PASSED
-- API tests: PASSED
-- Inference tests: PASSED
-- Base-model SQL evaluation: NOT MEASURED
-- Fine-tuned evaluation: NOT RUN
+## Held-Out Evaluation
 
-## Actual Failures
+The base model and fine-tuned adapter were both generated against the same five test records.
 
-Observed during implementation:
+| Measure | Base | Adapter |
+| --- | ---: | ---: |
+| Exact match | 0/5 | 0/5 |
+| SQL targets with parse-valid first fenced query | 4/4 | 4/4 |
+| SQL targets passing the project safety filter | 4/4 | 4/4 |
 
-- missing library compatibility assumptions were resolved by keeping the code compatible with a minimal Python stack
-- the environment is not set up for a real GPU fine-tuning run, so end-to-end LoRA training remains proposed
+The adapter showed no exact-match gain in this smoke experiment. The test set is too small for generalization conclusions. The generator also emitted prompt-like continuation after the SQL block; evaluation scores only the first fenced SQL candidate. Semantic correctness and database execution were not measured.
 
-## Fixes
+## Software Verification
 
-- added a dry-run training mode to avoid fake training claims
-- added data validation and SQL safety checks
-- kept evaluation and API code independent of model training
+- Dataset validation and split tests: passed
+- Training-data prompt masking and padding tests: passed
+- ROCm backend precedence and device-count tests: passed
+- Dry-run: passed; validated 19 train and 4 validation examples without downloading a model or writing artifacts
+- CPU + 4-bit guard: passed; refuses to claim GPU training on CPU
+- Base-vs-adapter evaluation metrics: tested with mocked predictions
 
-## Inference Tests
+## Failure and Fix
 
-Status: VERIFIED by tests that call the generator and safety validation.
+The first AMD attempt loaded the base model and LoRA weights but stopped before training because Transformers 5.18 removed the `warmup_ratio` argument. The trainer now maps the configured ratio to `warmup_steps` for newer Transformers while retaining `warmup_ratio` for versions that support it. The subsequent AMD run completed.
 
-## API Tests
+## Not Verified
 
-Status: VERIFIED by FastAPI client tests.
-
-## Docker Verification
-
-Status: NOT VERIFIED end-to-end because Docker was not run in this workspace.
-
-## Deployment Status
-
-Status: PROPOSED / local reproducible setup only.
-
-## Limitations
-
-- No actual model training was executed on a GPU
-- No production deployment was performed
-- Evaluation values are conservative and evidence-based only
+- Useful fine-tuned quality or improvement over the base model
+- Semantic correctness or SQL execution accuracy
+- Multi-epoch training or a larger, representative dataset
+- Production deployment, serving performance, or cost optimization
 
 ## Final Claim Status
 
-- Verified: dataset validation, config loading, API behavior, inference safety tests
-- Partially verified: training pipeline structure and code integration
-- Proposed: GPU fine-tuning, deployment, cloud inference, production monitoring
+- Verified: working AMD MI300X ROCm QLoRA smoke run and saved adapter
+- Verified: local dry-run, training-data handling, backend detection, and evaluation code tests
+- Not demonstrated: meaningful model improvement or production readiness
