@@ -188,6 +188,12 @@ Endpoints:
 }
 ```
 
+## Demo UI
+
+The Streamlit client in [frontend/streamlit_app.py](frontend/streamlit_app.py) submits a question and schema to the API and displays the generated SQL. Install its separate dependencies with `pip install -r frontend/requirements.txt`, then run `streamlit run frontend/streamlit_app.py`. Set `SQL_API_URL` if the API is not available at `http://127.0.0.1:8000`.
+
+For a private AMD demo, keep the API on a container-only port and forward it over SSH to local port 8000. Do not publish the model API directly to the internet without adding authentication and abuse controls.
+
 ## Safety
 
 The project includes safety validation for:
