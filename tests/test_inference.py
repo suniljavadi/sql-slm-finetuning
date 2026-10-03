@@ -70,6 +70,16 @@ def test_generate_sql_rejects_schema_mismatch_after_one_repair_attempt():
     assert len(prompts) == 2
 
 
+def test_generate_sql_allows_sqlite_double_quoted_string_values():
+    sql = generate_sql(
+        "Find customers in Boston",
+        generator=lambda _prompt, _schema: 'SELECT name FROM customers WHERE city = "Boston"',
+        schema="customers(id, name, city)",
+    )
+
+    assert sql == 'SELECT name FROM customers WHERE city = "Boston"'
+
+
 def test_generate_sql_rejects_empty_input():
     try:
         generate_sql("   ")

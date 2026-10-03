@@ -101,6 +101,6 @@ def validate_sql_schema(sql: str, schema: str) -> str:
                 raise ValueError(f"Generated SQL references unknown table or alias '{column.table}'.")
             if column_name not in catalog[table_name]:
                 raise ValueError(f"Generated SQL references unknown column '{column.name}' on table '{table_name}'.")
-        elif column_name not in all_columns:
+        elif column_name not in all_columns and not column.this.args.get("quoted", False):
             raise ValueError(f"Generated SQL references unknown column '{column.name}'.")
     return sql
