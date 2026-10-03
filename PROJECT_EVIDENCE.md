@@ -115,7 +115,7 @@ The adapter improved syntax validity but did not improve execution accuracy on t
 
 ### Schema-Guard Diagnostic
 
-Offline validation of the saved adapter predictions rejected 12 of 26 execution failures and accepted all four execution-correct outputs in the 30-row sample. A six-row guarded-retry check achieved 2/6 execution accuracy, matching the unguarded adapter on the same rows. The guard catches some invalid identifiers, but the retry did not improve execution accuracy in this small sample.
+Offline validation of the saved adapter predictions rejected 12 of 26 execution failures and accepted all four execution-correct outputs in the 30-row sample. A six-row schema-grounded prompt check achieved 2/6 execution accuracy, matching the unguarded adapter on the same rows; all six outputs passed identifier validation, so no repair retry was triggered. The guard catches some invalid identifiers, but it did not improve execution accuracy on this sample.
 
 ## Held-Out Evaluation
 
