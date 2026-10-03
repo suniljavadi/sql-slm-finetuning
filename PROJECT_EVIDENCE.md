@@ -82,6 +82,18 @@ The base and adapter were evaluated on the same 100-row random held-out split. S
 
 This is a promising within-dataset result, not an independent benchmark. Random row splitting may leave related schemas or query patterns across splits. Exact match does not establish semantic correctness, and no queries were executed against databases. The safety metric checks the project’s read-only validator; it is not a database authorization boundary.
 
+### Transfer Check on Original Synthetic Holdout
+
+After the larger fine-tune, the new adapter was evaluated again on the original five-row synthetic test split:
+
+| Measure | Base | New adapter |
+| --- | ---: | ---: |
+| Exact match | 0/5 | 0/5 |
+| SQL parse-valid | 4/4 | 4/4 |
+| Project SQL safety pass | 4/4 | 4/4 |
+
+This small check found no exact-match transfer to the original synthetic examples. Together with the 100-row result, it suggests the model may be learning dataset-specific patterns; independent and execution-based evaluation is still needed.
+
 ## Held-Out Evaluation
 
 The base model and fine-tuned adapter were both generated against the same five test records.
@@ -111,6 +123,7 @@ The first AMD attempt loaded the base model and LoRA weights but stopped before 
 ## Not Verified
 
 - Generalization beyond the SQL-Create-Context-derived random split
+- Exact-match transfer to the original synthetic holdout
 - Semantic correctness or SQL execution accuracy
 - Multi-epoch training or a larger, independently sourced evaluation benchmark
 - Production deployment, serving performance, or cost optimization
