@@ -19,6 +19,14 @@ def test_generate_sql_uses_injected_generator_and_validates_result():
     assert sql == "SELECT name FROM customers;"
 
 
+def test_generate_sql_trims_next_training_example_from_model_output():
+    generated = "SELECT name FROM customers;Human: ### Instruction:\nnext example"
+
+    sql = generate_sql("List customer names", generator=lambda _: generated)
+
+    assert sql == "SELECT name FROM customers;"
+
+
 def test_generate_sql_rejects_empty_input():
     try:
         generate_sql("   ")

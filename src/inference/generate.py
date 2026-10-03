@@ -4,6 +4,7 @@ import re
 from collections.abc import Callable
 
 SAFE_SQL_PATTERN = re.compile(r"\b(SELECT|WITH|SHOW|DESCRIBE|EXPLAIN)\b", re.IGNORECASE)
+CONTINUATION_MARKER = re.compile(r"(?:Human:\s*)?###\s*Instruction:", re.IGNORECASE)
 
 
 def validate_user_input(text: str) -> str:
@@ -30,6 +31,11 @@ def validate_sql_output(sql_text: str) -> str:
     return cleaned
 
 
+def trim_model_continuation(sql_text: str) -> str:
+    match = CONTINUATION_MARKER.search(sql_text)
+    return sql_text[:match.start()].strip() if match else sql_text.strip()
+
+
 def generate_sql(
     prompt: str,
     model_response: str | None = None,
@@ -40,5 +46,5 @@ def generate_sql(
         if generator is None:
             model_response = f"SELECT * FROM example_table WHERE description LIKE '%{user_input}%';"
         else:
-            model_response = generator(user_input)
+            model_response = trim_model_continuation(generator(user_input))
     return validate_sql_output(model_response)
