@@ -68,7 +68,10 @@ def make_sql_generator(
 
     def generate(prompt: str, schema: str = "") -> str:
         record = {
-            "instruction": "Generate a read-only SQL query. Return only the SQL query.",
+            "instruction": (
+                "Generate one read-only SQLite SELECT or WITH query. Use only table and column "
+                "identifiers present in the supplied schema; never invent names. Return SQL only."
+            ),
             "input": prompt,
             "schema": schema,
         }

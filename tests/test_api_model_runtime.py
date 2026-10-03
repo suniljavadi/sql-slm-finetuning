@@ -31,7 +31,10 @@ def test_model_generator_formats_prompt_and_uses_loaded_adapter(monkeypatch):
             model,
             tokenizer,
             {
-                "instruction": "Generate a read-only SQL query. Return only the SQL query.",
+                "instruction": (
+                    "Generate one read-only SQLite SELECT or WITH query. Use only table and column "
+                    "identifiers present in the supplied schema; never invent names. Return SQL only."
+                ),
                 "input": "List customer names",
                 "schema": "customers(id, name)",
             },
