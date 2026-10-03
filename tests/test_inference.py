@@ -6,6 +6,19 @@ def test_generate_sql_valid_select():
     assert "SELECT" in sql.upper()
 
 
+def test_generate_sql_uses_injected_generator_and_validates_result():
+    prompts = []
+
+    def generator(prompt):
+        prompts.append(prompt)
+        return "SELECT name FROM customers;"
+
+    sql = generate_sql("  list customer names  ", generator=generator)
+
+    assert prompts == ["list customer names"]
+    assert sql == "SELECT name FROM customers;"
+
+
 def test_generate_sql_rejects_empty_input():
     try:
         generate_sql("   ")

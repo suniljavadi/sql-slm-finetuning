@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 SAFE_SQL_PATTERN = re.compile(r"\b(SELECT|WITH|SHOW|DESCRIBE|EXPLAIN)\b", re.IGNORECASE)
 
@@ -29,8 +30,15 @@ def validate_sql_output(sql_text: str) -> str:
     return cleaned
 
 
-def generate_sql(prompt: str, model_response: str | None = None) -> str:
+def generate_sql(
+    prompt: str,
+    model_response: str | None = None,
+    generator: Callable[[str], str] | None = None,
+) -> str:
     user_input = validate_user_input(prompt)
     if model_response is None:
-        model_response = f"SELECT * FROM example_table WHERE description LIKE '%{user_input}%';"
+        if generator is None:
+            model_response = f"SELECT * FROM example_table WHERE description LIKE '%{user_input}%';"
+        else:
+            model_response = generator(user_input)
     return validate_sql_output(model_response)

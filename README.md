@@ -158,7 +158,17 @@ The error-analysis scaffolding is in [src/evaluation/error_analysis.py](src/eval
 
 ## Inference
 
-The inference layer is separated from the API in [src/inference/generate.py](src/inference/generate.py). It validates input, selects a model or fallback generator, and returns SQL output with a safety-check phase.
+The inference layer is separated from the API in [src/inference/generate.py](src/inference/generate.py). It validates input, runs generated SQL through the safety checks, and uses the deterministic template only when no model adapter is configured.
+
+To run the API with a saved LoRA adapter, set `SQL_MODEL_ADAPTER_DIR` to the adapter directory before starting Uvicorn. The model and adapter are loaded once when the API starts:
+
+```bash
+SQL_MODEL_ADAPTER_DIR=./artifacts/checkpoints \
+SQL_MODEL_USE_4BIT=true \
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+`SQL_MODEL_NAME` overrides `MODEL_NAME`; `SQL_MODEL_MAX_NEW_TOKENS` defaults to 128. The model-backed mode requires a compatible PyTorch CUDA/ROCm runtime for 4-bit loading. Without an adapter path, the API stays in template mode and does not load model weights.
 
 ## API
 
@@ -202,7 +212,7 @@ A Dockerfile and docker-compose file are included for reproducible local deploym
 
 ## Deployment
 
-The current project is set up as a local reproducible inference/API project. Deployment beyond local Docker is marked as proposed rather than claimed production status.
+The API supports adapter-backed local inference when configured as above. A public hosted deployment is not currently provided; exposing the endpoint would require authentication, rate limiting, and operational monitoring.
 
 ## Limitations
 

@@ -1,11 +1,33 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+import os
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 from src.inference.generate import generate_sql
+from src.inference.model import make_sql_generator
 
-app = FastAPI(title="SQL SLM API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    adapter_dir = os.getenv("SQL_MODEL_ADAPTER_DIR")
+    application.state.sql_generator = None
+    if adapter_dir:
+        application.state.sql_generator = make_sql_generator(
+            model_name=os.getenv(
+                "SQL_MODEL_NAME",
+                os.getenv("MODEL_NAME", "Qwen/Qwen2.5-3B-Instruct"),
+            ),
+            adapter_dir=adapter_dir,
+            use_4bit=os.getenv("SQL_MODEL_USE_4BIT", "true").lower() == "true",
+            max_new_tokens=int(os.getenv("SQL_MODEL_MAX_NEW_TOKENS", "128")),
+        )
+    yield
+
+
+app = FastAPI(title="SQL SLM API", version="0.1.0", lifespan=lifespan)
 
 
 class GenerateRequest(BaseModel):
@@ -24,9 +46,13 @@ def health() -> dict[str, str]:
 
 
 @app.post("/generate", response_model=GenerateResponse)
-def generate(request: GenerateRequest) -> GenerateResponse:
+def generate(request: GenerateRequest, http_request: Request) -> GenerateResponse:
     try:
-        sql = generate_sql(request.prompt, request.model_response)
+        sql = generate_sql(
+            request.prompt,
+            request.model_response,
+            getattr(http_request.app.state, "sql_generator", None),
+        )
         return GenerateResponse(sql=sql)
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
