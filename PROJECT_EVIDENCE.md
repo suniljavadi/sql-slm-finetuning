@@ -94,6 +94,25 @@ After the larger fine-tune, the new adapter was evaluated again on the original 
 
 This small check found no exact-match transfer to the original synthetic examples. Together with the 100-row result, it suggests the model may be learning dataset-specific patterns; independent and execution-based evaluation is still needed.
 
+## Independent BIRD Mini-Dev Execution Check
+
+Status: COMPLETED as a small external execution check.
+
+- Source: BIRD Mini-Dev SQLite split, labeled CC BY-SA 4.0; no benchmark data is checked into Git
+- Database archive: official 763 MB package; only the SQLite dev questions, gold SQL, and three needed databases were extracted to ignored AMD artifacts
+- Sample: 30 questions, seed 42, balanced across `debit_card_specializing`, `student_club`, and `california_schools` (10 each)
+- Gold-query preflight: 30/30 selected gold queries executed successfully
+- Prediction guard: SQLite read-only URI, query-only mode, single-query restriction, 3-second execution timeout, 10,000-row limit
+
+| Measure | Base | New adapter |
+| --- | ---: | ---: |
+| Execution accuracy | 4/30 | 4/30 |
+| SQL parse-valid | 16/30 | 25/30 |
+| Exact match | 1/30 | 0/30 |
+| Project safety pass | 30/30 | 30/30 |
+
+The adapter improved syntax validity but did not improve execution accuracy on this small independent subset. Its SQL is not yet reliably correct. Report retained locally at ignored `artifacts/bird-mini-dev-20250722/bird-execution.json`.
+
 ## Held-Out Evaluation
 
 The base model and fine-tuned adapter were both generated against the same five test records.
@@ -124,7 +143,7 @@ The first AMD attempt loaded the base model and LoRA weights but stopped before 
 
 - Generalization beyond the SQL-Create-Context-derived random split
 - Exact-match transfer to the original synthetic holdout
-- Semantic correctness or SQL execution accuracy
+- Reliable semantic/database execution accuracy; the BIRD check was limited to 30 rows and execution accuracy was 4/30
 - Multi-epoch training or a larger, independently sourced evaluation benchmark
 - Production deployment, serving performance, or cost optimization
 
@@ -132,5 +151,6 @@ The first AMD attempt loaded the base model and LoRA weights but stopped before 
 
 - Verified: AMD MI300X ROCm smoke run and separate 800-example QLoRA experiment with saved adapters
 - Preliminary evidence: adapter improved normalized exact match from 0/100 to 61/100 on a random SQL-Create-Context-derived held-out split
+- Verified counterevidence: base and adapter both achieved 4/30 execution accuracy on a small independent BIRD Mini-Dev subset
 - Verified: local dry-run, training-data handling, backend detection, and evaluation code tests
 - Not demonstrated: independent benchmark generalization, execution-based accuracy, or production readiness

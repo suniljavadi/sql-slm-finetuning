@@ -56,3 +56,9 @@ python -m src.evaluation.model_evaluation --test-file artifacts/sql-create-conte
 ```
 
 This larger run is an experiment, not a quality claim. Compare exact match, SQL syntax/safety, and execution-based results before describing it as an improvement.
+
+## Independent BIRD Mini-Dev Execution Check
+
+`src/evaluation/bird_execution.py` evaluates a small BIRD Mini-Dev SQLite subset against its official database files. BIRD Mini-Dev is licensed CC-BY-SA-4.0 and is independent of the SQL-Create-Context training sample. Benchmark data and databases are not checked into Git.
+
+The October 3, 2026 run used 30 questions balanced across three databases and achieved 4/30 execution accuracy for both base and adapter. The adapter was more often syntactically valid (25/30 vs 16/30), but this did not improve execution accuracy. See [PROJECT_EVIDENCE.md](../PROJECT_EVIDENCE.md).
