@@ -4,9 +4,9 @@ import re
 from typing import Any
 
 from sqlglot import parse
-from sqlglot.errors import ParseError
+from sqlglot.errors import SqlglotError
 
-from src.inference.generate import validate_sql_output
+from src.inference.generate import trim_model_continuation, validate_sql_output
 
 
 SQL_PREFIX = re.compile(r"^\s*(SELECT|WITH)\b", re.IGNORECASE)
@@ -26,8 +26,9 @@ def _is_sql_target(value: Any) -> bool:
 def _candidate_output(value: Any) -> str:
     if not isinstance(value, str):
         return ""
-    match = SQL_FENCE.search(value)
-    return match.group(1).strip() if match else value.strip()
+    candidate = trim_model_continuation(value)
+    match = SQL_FENCE.search(candidate)
+    return match.group(1).strip() if match else candidate.strip()
 
 
 def syntax_validity(sql: str) -> bool:
@@ -36,7 +37,7 @@ def syntax_validity(sql: str) -> bool:
     try:
         candidate = _candidate_output(sql)
         statements = [statement for statement in parse(candidate) if statement is not None]
-    except ParseError:
+    except SqlglotError:
         return False
     return len(statements) == 1
 

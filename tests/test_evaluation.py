@@ -14,6 +14,25 @@ def test_sql_metrics_distinguish_syntax_safety_and_exact_match():
     assert metrics["sql_safe"] is False
 
 
+def test_sql_metrics_mark_tokenizer_errors_invalid_without_crashing():
+    metrics = compute_metrics(
+        "SELECT name FROM customers;",
+        "SELECT name FROM customers WHERE name = 'unterminated",
+    )
+
+    assert metrics["sql_syntax_valid"] is False
+
+
+def test_sql_metrics_score_first_query_before_next_training_prompt():
+    generated = "SELECT name FROM customers;Human: ### Instruction:\nnext example"
+
+    metrics = compute_metrics("SELECT name FROM customers;", generated)
+
+    assert metrics["exact_match"] is True
+    assert metrics["sql_syntax_valid"] is True
+    assert metrics["sql_safe"] is True
+
+
 def test_sql_metrics_use_first_fenced_query_before_extra_continuation():
     actual = "```sql\nSELECT id FROM customers;\n```\n### Instruction:\nnext example"
 
