@@ -21,3 +21,13 @@ def test_generate_valid_request():
 def test_generate_invalid_request():
     response = client.post("/generate", json={"prompt": ""})
     assert response.status_code == 422
+
+
+def test_generate_internal_error_does_not_leak_details(monkeypatch):
+    def boom(*args, **kwargs):
+        raise RuntimeError('secret-path-detail')
+
+    monkeypatch.setattr('api.main.generate_sql', boom)
+    response = client.post('/generate', json={'prompt': 'x'})
+    assert response.status_code == 500
+    assert 'secret-path-detail' not in response.text

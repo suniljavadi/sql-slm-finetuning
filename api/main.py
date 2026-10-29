@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,8 @@ from pydantic import BaseModel, Field
 
 from src.inference.generate import generate_sql
 from src.inference.model import make_sql_generator
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -59,4 +62,5 @@ def generate(request: GenerateRequest, http_request: Request) -> GenerateRespons
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Internal error: {exc}") from exc
+        logger.exception("SQL generation failed")
+        raise HTTPException(status_code=500, detail="Internal server error.") from exc

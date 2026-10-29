@@ -229,7 +229,7 @@ See [tests](tests).
 
 ## Docker
 
-A Dockerfile and docker-compose file are included for reproducible local deployment.
+A Dockerfile and docker-compose file are included for reproducible local deployment. The container runs as a non-root user and compose publishes the API on 127.0.0.1 only. This is a research/demo project, not production-ready: there is no authentication, rate limiting, or monitoring, and model quality is not validated.
 
 ## Deployment
 
