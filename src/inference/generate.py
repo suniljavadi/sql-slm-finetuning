@@ -55,7 +55,8 @@ def generate_sql(
         raise ValueError("Schema is too long.")
     if model_response is None:
         if generator is None:
-            model_response = f"SELECT * FROM example_table WHERE description LIKE '%{user_input}%';"
+            escaped_input = user_input.replace("'", "''")
+            model_response = f"SELECT * FROM example_table WHERE description LIKE '%{escaped_input}%';"
         else:
             model_response = trim_model_continuation(generator(user_input, cleaned_schema))
             try:

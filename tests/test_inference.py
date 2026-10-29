@@ -8,6 +8,15 @@ def test_generate_sql_valid_select():
     assert "SELECT" in sql.upper()
 
 
+def test_default_template_escapes_quotes_in_user_input():
+    sql = generate_sql("Find O'Brien's orders")
+
+    assert sql == (
+        "SELECT * FROM example_table "
+        "WHERE description LIKE '%Find O''Brien''s orders%';"
+    )
+
+
 def test_generate_sql_uses_injected_generator_and_validates_result():
     prompts = []
 
