@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from src.training.data import format_prompt
+from src.prompting import format_prompt
 
 
 def load_adapter_model(model_name: str, adapter_dir: str | Path, use_4bit: bool):
